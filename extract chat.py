@@ -1,7 +1,7 @@
 import os
 import time
 from mgz.summary import Summary
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import msvcrt  # For detecting any key press on Windows
 
 # Configuration - Edit if needed
@@ -35,17 +35,24 @@ PROFILE_ID = str(PROFILE_ID)
 REPLAY_DIR = os.path.join(REPLAY_BASE_DIR, PROFILE_ID, 'savegame')
 
 def get_replays_by_date():
-    today = date.today()
+    now = datetime.now()
+    if now.hour >= 7:
+        start_time = now.replace(hour=7, minute=0, second=0, microsecond=0)
+        end_time = (now + timedelta(days=1)).replace(hour=4, minute=0, second=0, microsecond=0)
+    else:
+        start_time = (now - timedelta(days=1)).replace(hour=7, minute=0, second=0, microsecond=0)
+        end_time = now.replace(hour=4, minute=0, second=0, microsecond=0)
+    
     todays_replays = []
     previous_replays = []
     for f in os.listdir(REPLAY_DIR):
         if f.endswith('.aoe2record'):
             file_path = os.path.join(REPLAY_DIR, f)
             mod_time = os.path.getmtime(file_path)
-            file_date = datetime.fromtimestamp(mod_time).date()
-            if file_date == today:
+            file_datetime = datetime.fromtimestamp(mod_time)
+            if start_time <= file_datetime < end_time:
                 todays_replays.append(file_path)
-            else:
+            elif file_datetime < start_time:
                 previous_replays.append(file_path)
     
     # Sort both lists by modification time, newest first
